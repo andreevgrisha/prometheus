@@ -1,0 +1,47 @@
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+
+  config.vm.box = "centos/7"
+
+  config.vm.network "forwarded_port", guest: 9100, host: 9101, host_ip: "192.168.88.100"
+
+  config.vm.network "private_network", ip: "192.168.88.100"
+
+  config.vm.synced_folder "../data", "/vagrant_data", id: "vagrant-root", disabled: true
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.gui = false
+    vb.name = "centos_host"
+
+    vb.customize [
+      'modifyvm', :id,
+      '--nictype1', 'virtio',
+      '--memory', '512',
+      '--cpus', '1'
+    ]
+  end
+
+    config.vm.provision "shell", inline: <<-SHELL
+      yum -y install yum-utils
+      yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+      yum -y install docker-ce
+      
+      systemctl enable docker
+      systemctl start docker
+
+      docker stop "node-exporter"
+      docker rm "node-exporter"
+      docker run -d --name "node-exporter" --restart unless-stopped \
+        --network=host \
+        -v '/proc:/host/proc' \
+        -v '/sys:/host/sys' \
+        -v '/:/rootfs' \
+        prom/node-exporter:latest \
+        '--path.procfs=/host/proc' \
+        '--path.sysfs=/host/sys' \
+        '--collector.filesystem.ignored-mount-points' \
+        "^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)"
+      iptables -A INPUT -p tcp --dport 9100 -j ACCEPT
+  SHELL
+end

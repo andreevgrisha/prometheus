@@ -1,4 +1,19 @@
 {{ ansible_managed | comment }}
 
+
+global:
+  scrape_interval:     15s 
+  evaluation_interval: 15s 
+  external_labels:
+     monitor: 'gri-monitor'
+
+scrape_configs:
+
+  - job_name: 'gri-host'
+    static_configs:
+     - targets: ['192.168.88.100:9100']
+       labels:
+         group: 'nodes'
+
 rule_files:
   - /etc/prometheus/rules/*.rules

@@ -44,6 +44,10 @@
        - /etc/prometheus/rules
        - /etc/prometheus/file_sd
 
+   - name: check prometheus install
+     stat:
+       path: /opt/prometheus/prometheus
+     register: result
 
    - name: download prometheus package
      unarchive: 
@@ -51,6 +55,7 @@
        dest: /opt/prometheus
        extra_opts: [--strip-components=1]
        copy: no
+     when: result.stat.exists == false
 
    - name: create systemd prometheus.service
      template:

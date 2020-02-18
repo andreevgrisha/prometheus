@@ -8,11 +8,10 @@ After=network-online.target
 Type=simple
 User=prometheus
 Group=prometheus
+
 ExecReload=/bin/kill -HUP $MAINPID
-ExecStart=/opt/prometheus/prometheus --config.file=/etc/prometheus/prometheus.yml \
-                                     --storage.tsdb.path=/opt/prometheus \
-                                     --web.console.libraries=/opt/prometheus/console_libraries \
-                                     --web.console.templates=/opt/prometheus/consoles
+ExecStart=/opt/prometheus/prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/opt/prometheus --web.console.libraries=/opt/prometheus/console_libraries --web.console.templates=/opt/prometheus/consoles
+
 CapabilityBoundingSet=CAP_SET_UID
 LimitNOFILE=65000
 LockPersonality=true
