@@ -1,0 +1,91 @@
+---
+# Run Prometheus as service
+
+- hosts: localhost
+  connection: local
+  become: yes
+  become_user: root
+
+  tasks:
+
+   - name: check prometheus group
+     group:
+       name: prometheus
+       system: true
+       state: present
+
+   - name: check prometheus user
+     user:
+       name: prometheus
+       system: true
+       shell: /sbin/nologin
+       group: prometheus
+       createhome: false
+       home: /opt/prometheus
+
+   - name: create prometheus directory
+     file:
+       path: /opt/prometheus
+       state: directory
+       owner: prometheus
+       group: prometheus
+       mode: 0755
+
+   - name: create prometheus config directory
+     file:
+       path: "{{ item }}"
+       state: directory
+       owner: root
+       group: prometheus
+       mode: 0770
+     with_items:
+       - /etc/prometheus
+       - /etc/prometheus/conf.d
+       - /etc/prometheus/rules
+       - /etc/prometheus/file_sd
+
+
+   - name: download prometheus package
+     unarchive: 
+       src: https://github.com/prometheus/prometheus/releases/download/v2.16.0/prometheus-2.16.0.linux-amd64.tar.gz
+       dest: /opt/prometheus
+       extra_opts: [--strip-components=1]
+       copy: no
+
+   - name: create systemd prometheus.service
+     template:
+       src: template/prometheus.service.j2
+       dest: /etc/systemd/system/prometheus.service
+       owner: root
+       group: root
+       mode: 0644
+     notify:
+        - restart prometheus
+   - name: configure prometheus
+     template:
+       src: template/prometheus.config.j2
+       dest: /etc/prometheus/prometheus.yml
+       force: true
+       owner: root
+       group: prometheus
+       mode: 0640
+       validate: "/opt/prometheus/promtool check config %s"
+     notify:
+       - reload prometheus
+
+  handlers:
+
+   - name: restart prometheus
+     become: true
+     systemd:
+       daemon_reload: true
+       name: prometheus
+       state: restarted
+      
+   - name: reload prometheus
+     become: true
+     systemd:
+       name: prometheus
+       state: reloaded
+
+...
