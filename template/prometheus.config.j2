@@ -15,5 +15,11 @@ scrape_configs:
        labels:
          group: 'nodes'
 
+  - job_name: 'gri-nexus'
+    static_configs:
+     - targets: ['localhost:9184']
+       labels:
+         group: 'registry'
+
 rule_files:
   - /etc/prometheus/rules/*.rules
