@@ -1,7 +1,7 @@
 ---
 # Run Prometheus as service
 
-- hosts: localhost
+- hosts: grilab.io
   connection: local
   become: yes
   become_user: root
@@ -86,7 +86,7 @@
 
    - name: download grafana
      get_url:
-       src: https://dl.grafana.com/oss/release/grafana-6.6.1-1.x86_64.rpm       
+       url: https://dl.grafana.com/oss/release/grafana-6.6.1-1.x86_64.rpm       
        dest: /tmp/grafana.rpm 
      when: graf.stat.exists == false
 
@@ -97,6 +97,19 @@
      notify:
        - start grafana
                      
+   - name: allow grafana port
+     firewalld:
+         port: 3003/tcp
+         permanent: yes
+         state: enabled
+
+   - name: allow prometheus port
+     firewalld:
+         port: 9091/tcp
+         permanent: yes
+         state: enabled
+     notify: reload firewall
+
   handlers:
 
    - name: restart prometheus
@@ -118,4 +131,6 @@
        name: grafana-server
        state: started
 
+   - name: reload firewall
+     command: firewall-cmd --reload
 ...

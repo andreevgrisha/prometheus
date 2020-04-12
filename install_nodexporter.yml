@@ -1,0 +1,24 @@
+
+---
+# Add node_exporter on target hosts
+
+- hosts: vse
+  gather_facts: false
+
+  tasks:
+
+   - name: create nodexporter user
+     user:
+       name: node_exporter
+       shell: /sbin/nologin
+       createhome: false
+
+   - name: copy nodexporter to host
+     copy: 
+       src: /home/gri/prometheus/node_exporter
+       dest: /usr/sbin/node_exporter
+       mode: '550'
+
+   - name: run expose metrics
+     shell: nohup /usr/sbin/node_exporter &
+
